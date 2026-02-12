@@ -2,13 +2,21 @@ import socket  # noqa: F401
 
 
 def main():
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
 
-    # TODO: Uncomment the code below to pass the first stage
-    #
+    # server_socket écoute les demandes de connexions entrantes (une sorte de réceptionniste)
     server_socket = socket.create_server(("localhost", 4221), reuse_port=True)
-    server_socket.accept() # wait for client
+
+    # Ici le serveur accepte la connexion et alloue un canal dédié avec .accept stocké dans le socket_client 
+    # (avec par lequel la communication va s'effectuer ; lien entre le socket du navigateur et un socket créé par le serveur en conséquence pour communiquer)
+    client_socket, client_adress = server_socket.accept() # wait for client
+
+    print("Server socket: ", server_socket)
+    print("Client socket: ", client_socket)
+    print("Client address: ", client_adress)
+
+    # Server Response Status 200 OK 
+    client_socket.send(bytes('HTTP/1.1 200 OK\r\n\r\n', 'utf-8'))
+
 
 
 if __name__ == "__main__":
