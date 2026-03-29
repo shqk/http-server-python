@@ -1,4 +1,5 @@
 import socket  # noqa: F401
+import re
 
 
 def main():
@@ -25,7 +26,16 @@ def main():
 
     if data and len(request_line) > 1:
         url_path = data.split(b" ")[1]
-        if url_path != b"/":
+        
+        if url_path == b"/":
+            client_socket.send(bytes("HTTP/1.1 200 OK\r\n\r\n", "utf-8"))
+
+        elif url_path.startswith(b"/echo/"):
+            to_echo = url_path[len(b"/echo/"):]
+            print(to_echo)
+            client_socket.send(bytes(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(to_echo)}\r\n\r\n{to_echo.decode("utf-8")}", "utf-8"))
+        
+        else:
             client_socket.send(bytes("HTTP/1.1 404 Not Found\r\n\r\n", "utf-8"))
 
 
