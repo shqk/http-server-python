@@ -21,7 +21,7 @@ def main():
     # Extract URL path
 
     
-    status_line = b"HTTP/1.1 404 Not Found\r\n\r\n"
+    status_line = b"HTTP/1.1 404 Not Found\r\n"
     request_headers_list = []
     request_headers = {}
     method = b""
@@ -61,30 +61,29 @@ def main():
         if len(request_line_splitted) == 3:
             method, url_path, version = request_line_splitted
         
-
-        
         if method != b"GET":
             pass
+
         else:
             if url_path == b"/":
-                status_line = b"HTTP/1.1 200 OK\r\n\r\n"
+                status_line = b"HTTP/1.1 200 OK"
                 response_headers = b''
                 response_body = b''
 
             elif url_path == b"/user-agent":
                 if request_headers.get(b"user-agent"):
-                    status_line = b"HTTP/1.1 200 OK\r\n"
-                    response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(request_headers.get(b"user-agent"))).encode("ascii") + b"\r\n\r\n"
+                    status_line = b"HTTP/1.1 200 OK"
+                    response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(request_headers.get(b"user-agent"))).encode("ascii") + b"\r\n"
                     response_body = request_headers.get(b"user-agent")
 
 
             elif url_path.startswith(b"/echo/"):
-                status_line = b"HTTP/1.1 200 OK\r\n"
+                status_line = b"HTTP/1.1 200 OK"
                 to_echo = url_path[len(b"/echo/"):]
-                response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(to_echo)).encode("ascii") + b"\r\n\r\n"
+                response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(to_echo)).encode("ascii") + b"\r\n"
                 response_body = to_echo
             
-        response = status_line + response_headers + response_body
+        response = status_line + b"\r\n" + response_headers + b"\r\n" + response_body
         client_socket.sendall(response)
 
 
