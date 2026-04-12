@@ -16,9 +16,20 @@ def main():
     print("Client address: ", client_adress)
 
     # Server Response Status 200 OK
-    # client_socket.send(bytes("HTTP/1.1 200 OK\r\n\r\n", "utf-8"))
+    # client_socket.sendall(bytes("HTTP/1.1 200 OK\r\n\r\n", "utf-8"))
 
     # Extract URL path
+
+    
+    status_line = b"HTTP/1.1 404 Not Found\r\n\r\n"
+    request_headers_list = []
+    request_headers = {}
+    method = b""
+    url_path = b""
+    version = b""
+    request_line = b''
+    response_headers = b''
+    response_body = b''
 
     if (data := client_socket.recv(1024)) and (b"\r\n\r\n" in data):
         request_line_headers, body = data.split(b"\r\n\r\n", maxsplit=1)
@@ -26,50 +37,57 @@ def main():
         print("request_line_headers: ", request_line_headers)
         print("Body: ", body)
 
-        request_line = b''
 
         if request_line_headers:
-            request_line, *headers = request_line_headers.split(b"\r\n")
+            request_line, *request_headers_list = request_line_headers.split(b"\r\n")
 
         print("Only request line: ", request_line)
-        print("Only headers: ",headers)
+        print("Only headers: ", request_headers_list)
 
     # Récupérer le chemin URL => deuxième élement d'une requête
 
     if request_line:
     
         request_line_splitted = request_line.split(b" ")
-        headers_dic = {} 
 
-        if headers:
+        if request_headers_list:
             # Utilisation du max_split pour split au premier ":"
-            for header in headers:
-                k, v = header.split(b':', maxsplit=1)
-                headers_dic[k.lower()] = v.strip()
-        print("Headers dictionnary: ", headers_dic)
+            for header in request_headers_list:
+                if b":" in header:
+                    k, v = header.split(b':', maxsplit=1)
+                    request_headers[k.lower()] = v.strip()
+        print("Headers dictionnary: ", request_headers)
 
         if len(request_line_splitted) == 3:
             method, url_path, version = request_line_splitted
         
+
+        
+        if method != b"GET":
+            pass
+        else:
             if url_path == b"/":
-                client_socket.send(bytes("HTTP/1.1 200 OK\r\n\r\n", "utf-8"))
+                status_line = b"HTTP/1.1 200 OK\r\n\r\n"
+                response_headers = b''
+                response_body = b''
 
             elif url_path == b"/user-agent":
-                if headers_dic[b"user-agent"]:
-                    client_socket.send(bytes(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(headers_dic[b"user-agent"])}\r\n\r\n{headers_dic[b"user-agent"].decode("utf-8")}", "utf-8"))
+                if request_headers.get(b"user-agent"):
+                    status_line = b"HTTP/1.1 200 OK\r\n"
+                    response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(request_headers.get(b"user-agent"))).encode("ascii") + b"\r\n\r\n"
+                    response_body = request_headers.get(b"user-agent")
+
 
             elif url_path.startswith(b"/echo/"):
+                status_line = b"HTTP/1.1 200 OK\r\n"
                 to_echo = url_path[len(b"/echo/"):]
-                client_socket.send(bytes(f"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {len(to_echo)}\r\n\r\n{to_echo.decode("utf-8")}", "utf-8"))
+                response_headers = b"Content-Type: text/plain\r\n" + b"Content-Length: " + str(len(to_echo)).encode("ascii") + b"\r\n\r\n"
+                response_body = to_echo
             
-            else:
-                client_socket.send(bytes("HTTP/1.1 404 Not Found\r\n\r\n", "utf-8"))
+        response = status_line + response_headers + response_body
+        client_socket.sendall(response)
 
 
-    if not data:
-        response = client_socket.send(bytes("HTTP/1.1 404 Not Found\r\n\r\n", "utf-8"))
-
-    client_socket.send(bytes("HTTP/1.1 200 OK\r\n\r\n", "utf-8"))
 
 
 if __name__ == "__main__":
